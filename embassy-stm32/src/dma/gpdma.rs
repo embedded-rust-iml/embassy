@@ -475,8 +475,8 @@ impl RingBuffer {
         });
         ch.tr2().write(|w| {
             w.set_dreq(match dir {
-                Dir::MemoryToPeripheral => vals::Dreq::DESTINATIONPERIPHERAL,
-                Dir::PeripheralToMemory => vals::Dreq::SOURCEPERIPHERAL,
+                Dir::MemoryToPeripheral => vals::Dreq::DESTINATION_PERIPHERAL,
+                Dir::PeripheralToMemory => vals::Dreq::SOURCE_PERIPHERAL,
             });
             w.set_reqsel(request);
         });
