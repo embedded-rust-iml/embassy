@@ -8,7 +8,7 @@ use core::task::{Context, Poll, Waker};
 use embassy_hal_internal::{into_ref, Peripheral, PeripheralRef};
 use embassy_sync::waitqueue::AtomicWaker;
 
-use super::ringbuffer::{self, DmaCtrl, ReadableDmaRingBuffer};
+use super::ringbuffer::{self, DmaCtrl, Error, ReadableDmaRingBuffer};
 use super::word::{Word, WordSize};
 use super::{AnyChannel, Channel, Dir, Request, STATE};
 use crate::interrupt::typelevel::Interrupt;
@@ -681,6 +681,11 @@ impl<'a, W: Word> ReadableRingBuffer<'a, W> {
     pub fn is_running(&mut self) -> bool {
         let info = self.channel.info();
         RingBuffer::is_running(&info.dma.ch(info.num))
+    }
+
+ /// The current length of the ringbuffer
+    pub fn len(&mut self) -> Result<usize, Error> {
+        Ok(self.ringbuf.len(&mut DmaCtrlImpl{ channel: self.channel.reborrow(), word_size: W::size()})?)
     }
 }
 
