@@ -383,7 +383,7 @@ impl<'a> Future for Transfer<'a> {
 
 /// Dma control interface for this DMA Type
 struct DmaCtrlImpl<'a> {
-    channel: PeripheralRef<'a, AnyChannel>,
+    channel: Peri<'a, AnyChannel>,
     word_size: WordSize,
 }
 impl<'a> DmaCtrl for DmaCtrlImpl<'a> {
@@ -549,21 +549,20 @@ impl RingBuffer {
 /// This is a Readable ring buffer. It reads data from a peripheral into a buffer. The reads happen in circular mode.
 /// There are interrupts on complete and half complete. You should read half the buffer on every read.
 pub struct ReadableRingBuffer<'a, W: Word> {
-    channel: PeripheralRef<'a, AnyChannel>,
+    channel: Peri<'a, AnyChannel>,
     ringbuf: ReadableDmaRingBuffer<'a, W>,
 }
 
 impl<'a, W: Word> ReadableRingBuffer<'a, W> {
     /// Create a new Readable ring buffer.
     pub unsafe fn new(
-        channel: impl Peripheral<P = impl Channel> + 'a,
+        channel: Peri<'a, impl Channel>,
         request: Request,
         peri_addr: *mut W,
         buffer: &'a mut [W],
         options: TransferOptions,
     ) -> Self {
-        into_ref!(channel);
-        let channel: PeripheralRef<'a, AnyChannel> = channel.map_into();
+        let channel: Peri<'a, AnyChannel> = channel.into();
 
         #[cfg(dmamux)]
         super::dmamux::configure_dmamux(&mut channel, request);
@@ -677,9 +676,12 @@ impl<'a, W: Word> ReadableRingBuffer<'a, W> {
         RingBuffer::is_running(&info.dma.ch(info.num))
     }
 
- /// The current length of the ringbuffer
+    /// The current length of the ringbuffer
     pub fn len(&mut self) -> Result<usize, Error> {
-        Ok(self.ringbuf.len(&mut DmaCtrlImpl{ channel: self.channel.reborrow(), word_size: W::size()})?)
+        Ok(self.ringbuf.len(&mut DmaCtrlImpl {
+            channel: self.channel.reborrow(),
+            word_size: W::size(),
+        })?)
     }
 }
 
